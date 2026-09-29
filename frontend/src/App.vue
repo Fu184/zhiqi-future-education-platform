@@ -16,19 +16,30 @@ const route = useRoute()
 const router = useRouter()
 const iconMap = { BrainCircuit, Code2, Bot, Box, Rocket, CloudSun, BookOpen, Newspaper, Users, ShoppingBag, ClipboardList, Sparkles }
 const nav = [
-  { label: '首页', path: '/' }, { label: '新闻资讯', path: '/news' },
-  { label: '教学中心', path: '/courses' }, { label: '学习任务', path: '/tasks' },
-  { label: '创作中心', path: '/create' }, { label: '作品展示', path: '/works' },
-  { label: 'AI 助手', path: '/assistant' },
-]
-const moreNav = [
-  { label: '商品与课程', path: '/shop', icon: ShoppingBag },
-  { label: '学校与机构', path: '/organization', icon: Users },
-  { label: '后台管理', path: '/admin', icon: LayoutDashboard },
+  { label: '首页', path: '/' },
+  { label: '新闻资讯', path: '/news', children: [
+    { label: '相关活动', path: '/news?section=activities' },
+    { label: '赛事', path: '/news?section=events' },
+    { label: '政策', path: '/news?section=policies' },
+  ] },
+  { label: '教学中心', path: '/courses', children: [
+    { label: '教师成长中心', path: '/teacher-growth' },
+    { label: '课程资源', path: '/courses' },
+    { label: '学习任务', path: '/tasks' },
+    { label: '作业表', path: '/assignments' },
+    { label: '我的作品', path: '/my-works' },
+    { label: '创作中心', path: '/create' },
+  ] },
+  { label: '商城', path: '/shop' },
+  { label: '关于我们', path: '/about', children: [
+    { label: '公司介绍', path: '/about' },
+    { label: '师资介绍', path: '/faculty' },
+    { label: '课程介绍', path: '/course-intro' },
+  ] },
+  { label: '加入我们', path: '/join' },
 ]
 const page = computed(() => route.path)
 const mobileOpen = ref(false)
-const moreOpen = ref(false)
 const dialog = ref(null)
 const toast = ref('')
 const keyword = ref('')
@@ -59,10 +70,25 @@ const filteredCourses = computed(() => featuredCourses.filter(item =>
 ))
 const filteredTasks = computed(() => store.tasks.filter(item => taskFilter.value === '全部任务' || item.status === taskFilter.value))
 const currentCourse = computed(() => dialog.value?.kind === 'course' ? featuredCourses.find(c => c.id === dialog.value.id) : null)
+const myWorks = computed(() => store.user ? store.works.filter(work => work.author === store.user.name) : [])
+const newsSections = { activities: '相关活动', events: '赛事', policies: '政策' }
+const newsTabs = ['全部', '相关活动', '赛事', '政策', '平台动态', '教学新闻', '学校新闻', '公告']
+const navGroups = {
+  '/courses': ['/courses', '/teacher-growth', '/tasks', '/assignments', '/my-works', '/create'],
+  '/about': ['/about', '/faculty', '/course-intro'],
+}
+const isNavActive = item => (navGroups[item.path] || [item.path]).includes(page.value)
+const infoPages = {
+  '/teacher-growth': { title: '教师成长中心', kicker: 'TEACHER DEVELOPMENT', description: '面向教师的课程与教学支持入口。', body: '教师培训和教学资料正在整理。你可以先浏览现有课程资源。', action: '查看课程资源', target: '/courses', icon: GraduationCap },
+  '/faculty': { title: '师资介绍', kicker: 'OUR EDUCATORS', description: '了解参与课程建设的教师团队。', body: '师资资料正在整理，正式介绍将在核实后发布。', action: '了解课程', target: '/course-intro', icon: Users },
+  '/course-intro': { title: '课程介绍', kicker: 'OUR COURSES', description: '查看平台目前展示的科技教育课程。', body: '以下课程为当前前端演示内容，课程安排以正式发布的信息为准。', action: '查看课程资源', target: '/courses', icon: BookOpen },
+  '/join': { title: '加入我们', kicker: 'JOIN US', description: '关注智启未来的合作与招聘信息。', body: '具体岗位与合作方式正在整理，欢迎通过联系页面了解后续消息。', action: '联系我们', target: '/contact', icon: Users },
+}
 
-watch(page, () => { keyword.value = ''; mobileOpen.value = false; moreOpen.value = false; window.scrollTo({ top: 0, behavior: 'smooth' }) })
+watch(() => route.fullPath, () => { keyword.value = ''; mobileOpen.value = false; window.scrollTo({ top: 0, behavior: 'smooth' }) })
+watch(() => route.query.section, section => { newsCategory.value = newsSections[section] || '全部' }, { immediate: true })
 
-function go(path) { router.push(path) }
+function go(path) { mobileOpen.value = false; router.push(path) }
 function notify(message) { toast.value = message; setTimeout(() => { if (toast.value === message) toast.value = '' }, 3000) }
 function openCourse(id) { dialog.value = { kind: 'course', id } }
 function toggleFavorite(id) {
@@ -139,11 +165,10 @@ function addCart(id) { if (!cart.value.includes(id)) cart.value.push(id); notify
           <span class="brand-copy"><strong>智启未来</strong><small>科技教育云平台</small></span>
         </button>
         <nav class="desktop-nav" aria-label="主导航">
-          <button v-for="item in nav" :key="item.path" :class="['nav-link', { active: page === item.path }]" @click="go(item.path)">{{ item.label }}</button>
-          <div class="more-wrap">
-            <button :class="['nav-link', { active: ['/shop','/organization','/admin'].includes(page) }]" @click="moreOpen = !moreOpen">更多 <ChevronDown :size="14" /></button>
-            <div v-if="moreOpen" class="more-menu">
-              <button v-for="item in moreNav" :key="item.path" @click="go(item.path)"><component :is="item.icon" :size="17" />{{ item.label }}<ChevronRight :size="14" /></button>
+          <div v-for="item in nav" :key="item.path" :class="['nav-item', { 'has-children': item.children }]">
+            <button :class="['nav-link', { active: isNavActive(item) }]" @click="go(item.path)">{{ item.label }}<ChevronDown v-if="item.children" :size="14" /></button>
+            <div v-if="item.children" class="nav-dropdown">
+              <button v-for="child in item.children" :key="child.path" @click="go(child.path)">{{ child.label }}<ChevronRight :size="14" /></button>
             </div>
           </div>
         </nav>
@@ -154,7 +179,10 @@ function addCart(id) { if (!cart.value.includes(id)) cart.value.push(id); notify
         </div>
       </div>
       <div v-if="mobileOpen" class="mobile-menu">
-        <button v-for="item in [...nav, ...moreNav]" :key="item.path" @click="go(item.path)">{{ item.label }}<ChevronRight :size="16" /></button>
+        <div v-for="item in nav" :key="item.path" class="mobile-nav-group">
+          <button class="mobile-nav-main" @click="go(item.path)">{{ item.label }}<ChevronRight :size="16" /></button>
+          <button v-for="child in item.children" :key="child.path" class="mobile-nav-child" @click="go(child.path)">{{ child.label }}</button>
+        </div>
       </div>
     </header>
 
@@ -199,7 +227,10 @@ function addCart(id) { if (!cart.value.includes(id)) cart.value.push(id); notify
         <section class="section news-home"><div class="container"><div class="section-top"><div><span class="kicker">LATEST STORIES</span><h2>发生在这里的<span>新鲜事</span></h2><p>关注平台动态，发现更多精彩的科技教育故事。</p></div><button class="text-link" @click="go('/news')">更多资讯 <ArrowUpRight :size="18" /></button></div><div class="news-home-grid"><article v-for="(item, index) in store.news.slice(0,3)" :key="item.id" class="news-home-card" @click="dialog = { kind:'news', item }"><span class="news-index">0{{ index + 1 }}</span><span class="news-date">{{ item.date }} <i>·</i> {{ item.category }}</span><h3>{{ item.title }}</h3><p>{{ item.excerpt }}</p><span class="circle-arrow"><ArrowUpRight :size="19" /></span></article></div></div></section>
       </template>
 
-      <template v-else-if="page === '/news'"><section class="page-banner container"><div><span class="kicker">NEWS & INSIGHTS</span><h1>新闻资讯</h1><p>了解平台动态，记录每一次探索与成长。</p></div><Newspaper :size="124" :stroke-width="1" /></section><section class="container page-body"><div class="toolbar"><div class="tabs"><button v-for="cat in ['全部','平台动态','教学新闻','学校新闻','公告']" :key="cat" :class="{ selected:newsCategory===cat }" @click="newsCategory=cat">{{ cat }}</button></div><label class="search-field"><Search :size="17" /><input v-model="keyword" placeholder="搜索新闻" /></label></div><div class="news-list"><article v-for="item in filteredNews" :key="item.id" class="news-row" @click="dialog={kind:'news',item}"><span class="news-row-date">{{ item.date }}</span><div><span class="tag">{{ item.category }}</span><h3>{{ item.title }}</h3><p>{{ item.excerpt }}</p></div><span class="row-arrow"><ArrowUpRight :size="20" /></span></article></div><div v-if="!filteredNews.length" class="empty-state">暂无符合条件的资讯</div></section></template>
+      <template v-else-if="page === '/news'">
+        <section class="page-banner container"><div><span class="kicker">NEWS & INSIGHTS</span><h1>{{ newsCategory === '全部' ? '新闻资讯' : newsCategory }}</h1><p>了解平台动态，记录每一次探索与成长。</p></div><Newspaper :size="124" :stroke-width="1" /></section>
+        <section class="container page-body"><div class="toolbar"><div class="tabs"><button v-for="cat in newsTabs" :key="cat" :class="{ selected:newsCategory===cat }" @click="newsCategory=cat">{{ cat }}</button></div><label class="search-field"><Search :size="17" /><input v-model="keyword" placeholder="搜索新闻" /></label></div><div class="news-list"><article v-for="item in filteredNews" :key="item.id" class="news-row" @click="dialog={kind:'news',item}"><span class="news-row-date">{{ item.date }}</span><div><span class="tag">{{ item.category }}</span><h3>{{ item.title }}</h3><p>{{ item.excerpt }}</p></div><span class="row-arrow"><ArrowUpRight :size="20" /></span></article></div><div v-if="!filteredNews.length" class="empty-state">该栏目暂无资讯</div></section>
+      </template>
 
       <template v-else-if="page === '/courses'"><section class="page-banner container"><div><span class="kicker">LEARNING CENTER</span><h1>教学中心</h1><p>打开一门课程，开启一段充满好奇的旅程。</p></div><BookOpen :size="124" :stroke-width="1" /></section><section class="container page-body"><div class="toolbar"><div class="tabs"><button v-for="cat in ['全部课程','人工智能','编程创造','机器人','创意设计']" :key="cat" :class="{ selected:courseCategory===cat }" @click="courseCategory=cat">{{ cat }}</button></div><label class="search-field"><Search :size="17" /><input v-model="keyword" placeholder="搜索课程" /></label></div><div class="course-grid all-courses"><article v-for="course in filteredCourses" :key="course.id" class="course-card" @click="openCourse(course.id)"><div :class="['course-art',course.color]"><span class="course-art-grid"></span><component :is="iconMap[course.icon]" :size="63" :stroke-width="1.15" /><span class="course-type">{{ course.type }}</span></div><div class="course-body"><div class="course-meta"><span>{{ course.level }}</span><span><Star :size="13" fill="currentColor" /> 精品课程</span></div><h3>{{ course.title }}</h3><p>{{ course.summary }}</p><div class="course-foot"><span><BookOpen :size="15" /> {{ course.lessons }} 课时</span><span>{{ course.learners }} 人在学 <ArrowRight :size="16" /></span></div></div></article></div></section></template>
 
@@ -209,6 +240,16 @@ function addCart(id) { if (!cart.value.includes(id)) cart.value.push(id); notify
 
       <template v-else-if="page === '/works'"><section class="page-banner container"><div><span class="kicker">STUDENT SHOWCASE</span><h1>作品展示</h1><p>每一个作品，都是勇敢探索的证明。</p></div><Sparkles :size="124" :stroke-width="1" /></section><section class="container page-body"><div class="section-top compact"><div><h2>创意作品集</h2><p>看看大家如何把灵感变成现实。</p></div><button class="btn btn-primary" @click="go('/create')"><Plus :size="17" /> 创作新作品</button></div><div class="works-grid"><article v-for="work in store.works" :key="work.id" class="work-card" @click="dialog={kind:'work',item:work}"><div :class="['work-art',work.color]"><component :is="iconMap[work.icon] || Sparkles" :size="68" :stroke-width="1.1" /><span>{{ work.type }}</span></div><div class="work-info"><span class="tag">{{ work.type }}</span><h3>{{ work.title }}</h3><p>{{ work.description }}</p><div><span><UserRound :size="14" /> {{ work.author }}</span><ArrowUpRight :size="18" /></div></div></article></div></section></template>
 
+      <template v-else-if="page === '/assignments'">
+        <section class="page-banner container"><div><span class="kicker">ASSIGNMENTS</span><h1>作业表</h1><p>查看当前演示任务及完成状态。</p></div><ClipboardList :size="124" :stroke-width="1" /></section>
+        <section class="container page-body"><div class="assignment-list"><article v-for="task in store.tasks" :key="task.id" class="assignment-row"><div><span class="tag">{{ task.course }}</span><h3>{{ task.title }}</h3><p>{{ task.description }}</p></div><div class="assignment-meta"><span>截止：{{ task.due }}</span><span :class="['status-badge',task.status==='已完成'?'done':task.status==='进行中'?'progress':'waiting']">{{ task.status }}</span></div></article></div><div v-if="!store.tasks.length" class="empty-state">暂无作业</div></section>
+      </template>
+
+      <template v-else-if="page === '/my-works'">
+        <section class="page-banner container"><div><span class="kicker">MY WORKS</span><h1>我的作品</h1><p>查看你在此浏览器中保存的创作。</p></div><Sparkles :size="124" :stroke-width="1" /></section>
+        <section class="container page-body"><div class="section-top compact"><div><h2>我的创作记录</h2><p>作品保存在当前浏览器中。</p></div><button class="btn btn-primary" @click="go('/create')"><Plus :size="17" /> 创作新作品</button></div><div v-if="myWorks.length" class="works-grid"><article v-for="work in myWorks" :key="work.id" class="work-card" @click="dialog={kind:'work',item:work}"><div :class="['work-art',work.color]"><component :is="iconMap[work.icon] || Sparkles" :size="68" :stroke-width="1.1" /><span>{{ work.type }}</span></div><div class="work-info"><span class="tag">{{ work.type }}</span><h3>{{ work.title }}</h3><p>{{ work.description }}</p></div></article></div><div v-else class="empty-state">{{ store.user ? '你还没有保存作品，去创作中心试试吧。' : '登录演示账号后，可查看以该昵称保存的作品。' }}</div></section>
+      </template>
+
       <template v-else-if="page === '/assistant'"><section class="page-banner container"><div><span class="kicker">AI LEARNING COMPANION</span><h1>AI 学习助手</h1><p>灵感卡住时，换一种方式继续探索。</p></div><Bot :size="124" :stroke-width="1" /></section><section class="container page-body assistant-layout"><aside class="assistant-intro"><div class="assistant-avatar"><Bot :size="32" /></div><h2>你好，探索者！</h2><p>把问题讲给我听，我们一起梳理思路、寻找下一步。</p><span class="demo-note"><CircleHelp :size="16" /> 当前为本地演示问答，正式 AI 服务需接入模型接口。</span><div class="suggestions"><strong>试试问我</strong><button v-for="prompt in ['推荐一门适合初学者的课程','Python 编程该怎么入门？','如何设计机器人任务？']" :key="prompt" @click="sendAi(prompt)">{{ prompt }}<ArrowUpRight :size="16" /></button></div></aside><div class="chat-panel"><div class="chat-head"><span class="online-dot"></span><strong>智启 AI 学习助手</strong><small>在线演示</small></div><div class="chat-messages"><div v-for="(message,i) in aiMessages" :key="i" :class="['chat-message',message.role]"><div class="chat-bubble">{{ message.text }}</div></div></div><form class="chat-input" @submit.prevent="sendAi()"><input v-model="aiInput" placeholder="输入你的问题，开始探索..." /><button type="submit" aria-label="发送消息"><Send :size="19" /></button></form></div></section></template>
 
       <template v-else-if="page === '/shop'"><section class="page-banner container"><div><span class="kicker">COURSE MARKETPLACE</span><h1>商品与课程</h1><p>为学校、老师和学生提供丰富的课程资源。</p></div><ShoppingBag :size="124" :stroke-width="1" /></section><section class="container page-body"><div class="notice-bar"><ShieldCheck :size="18" /><span>课程价格、订单和支付接口将在后端接入后启用；这里展示选课清单交互。</span></div><div class="section-top compact"><div><h2>精选课程资源</h2><p>探索适合不同学习阶段的主题课程。</p></div><span class="cart-count"><ShoppingBag :size="17" /> 选课清单 {{ cart.length }}</span></div><div class="shop-grid"><article v-for="course in featuredCourses" :key="course.id" class="shop-card"><div :class="['shop-icon',course.color]"><component :is="iconMap[course.icon]" :size="27" /></div><span class="tag">{{ course.type }}</span><h3>{{ course.title }}</h3><p>{{ course.summary }}</p><div><span>{{ course.lessons }} 课时 · {{ course.level }}</span><button @click="addCart(course.id)">{{ cart.includes(course.id)?'已加入':'加入清单' }} <ArrowRight :size="15" /></button></div></article></div></section></template>
@@ -216,6 +257,11 @@ function addCart(id) { if (!cart.value.includes(id)) cart.value.push(id); notify
       <template v-else-if="page === '/organization'"><section class="page-banner container"><div><span class="kicker">SCHOOLS & COMMUNITY</span><h1>学校与机构</h1><p>连接学校、教师、学生与教育管理者。</p></div><Users :size="124" :stroke-width="1" /></section><section class="container page-body"><div class="org-hero"><div><span class="kicker light">GROW TOGETHER</span><h2>让优质科技教育<br>走进更多课堂</h2><p>以课程资源、班级协作和作品成长记录，支持学校开展丰富的科技教育实践。</p></div><div class="org-shapes"><GraduationCap :size="88" :stroke-width="1" /></div></div><div class="org-grid"><div v-for="item in [{icon:GraduationCap,title:'学校管理',text:'组织课程与班级，构建学校专属学习空间。'},{icon:Users,title:'班级协作',text:'连接教师与学生，关注每个人的学习进度。'},{icon:ShieldCheck,title:'角色权限',text:'按不同角色提供清晰的入口与管理边界。'}]" :key="item.title"><component :is="item.icon" :size="27" /><h3>{{ item.title }}</h3><p>{{ item.text }}</p></div></div><div class="info-callout"><div><h3>加入智启未来教育社区</h3><p>学校入驻和机构管理功能需要后台服务支持，前端入口与展示页面已经预留。</p></div><button class="btn btn-primary" @click="go('/contact')">联系我们 <ArrowRight :size="16" /></button></div></section></template>
 
       <template v-else-if="page === '/admin'"><section class="page-banner container"><div><span class="kicker">PLATFORM CONSOLE</span><h1>后台管理</h1><p>集中查看平台内容与学习数据。</p></div><LayoutDashboard :size="124" :stroke-width="1" /></section><section class="container page-body"><div class="notice-bar"><ShieldCheck :size="18" /><span>当前为前端演示工作台，数据保存在本机浏览器中；正式上线需接入身份验证与服务端权限。</span></div><div class="admin-stats"><div><Newspaper :size="22" /><strong>{{ store.news.length }}</strong><span>新闻资讯</span></div><div><BookOpen :size="22" /><strong>{{ featuredCourses.length }}</strong><span>课程资源</span></div><div><ClipboardList :size="22" /><strong>{{ store.tasks.length }}</strong><span>学习任务</span></div><div><Sparkles :size="22" /><strong>{{ store.works.length }}</strong><span>展示作品</span></div></div><div class="admin-layout"><aside><span>内容管理</span><button v-for="tab in ['新闻管理','任务管理','作品管理','课程管理','用户与学校','系统设置']" :key="tab" :class="{selected:adminTab===tab}" @click="adminTab=tab">{{ tab }}<ChevronRight :size="16" /></button></aside><div class="admin-main"><div class="admin-main-head"><div><h2>{{ adminTab }}</h2><p>{{ ['新闻管理','任务管理','作品管理'].includes(adminTab)?'管理平台展示内容和学习资料。':'该模块的完整操作将在接入后端服务后开放。' }}</p></div><button v-if="['新闻管理','任务管理','作品管理'].includes(adminTab)" class="btn btn-primary" @click="dialog={kind:'admin-add'}"><Plus :size="16" /> 新增内容</button></div><template v-if="['新闻管理','任务管理','作品管理'].includes(adminTab)"><div v-for="item in adminTab==='新闻管理'?store.news:adminTab==='任务管理'?store.tasks:store.works" :key="item.id" class="admin-row"><div><span class="tag">{{ item.category || item.status || item.type }}</span><strong>{{ item.title }}</strong><small>{{ item.date || item.course || item.author }}</small></div><button title="删除" @click="removeAdminItem(item.id)"><Trash2 :size="17" /></button></div></template><div v-else class="admin-placeholder"><Layers3 :size="43" :stroke-width="1.3" /><h3>管理入口已预留</h3><p>{{ adminTab }}需要配合服务端数据与权限系统完成。</p></div></div></div></section></template>
+
+      <template v-else-if="infoPages[page]">
+        <section class="page-banner container"><div><span class="kicker">{{ infoPages[page].kicker }}</span><h1>{{ infoPages[page].title }}</h1><p>{{ infoPages[page].description }}</p></div><component :is="infoPages[page].icon" :size="124" :stroke-width="1" /></section>
+        <section class="container page-body info-page"><p>{{ infoPages[page].body }}</p><button class="btn btn-primary" @click="go(infoPages[page].target)">{{ infoPages[page].action }} <ArrowRight :size="17" /></button><div v-if="page === '/course-intro'" class="course-intro-list"><article v-for="course in featuredCourses" :key="course.id"><span class="tag">{{ course.type }}</span><h3>{{ course.title }}</h3><p>{{ course.summary }}</p></article></div></section>
+      </template>
 
       <template v-else-if="page === '/login'"><section class="login-page"><div class="login-visual"><div><span class="kicker light">WELCOME TO ZHIQI FUTURE</span><h1>每一次好奇<br>都是未来的起点</h1><p>探索 · 创造 · 成长</p></div></div><div class="login-form-wrap"><div class="login-form"><div class="brand-mini"><span class="brand-mark"><span></span><span></span><span></span><span></span></span> 智启未来</div><h2>欢迎来到智启未来</h2><p>输入昵称，开始体验你的学习空间。</p><label>昵称<input v-model="loginName" placeholder="请输入昵称" @keyup.enter="login" /></label><button class="btn btn-primary" @click="login">进入平台 <ArrowRight :size="17" /></button><small>演示模式：此处不使用参考网站账号，也不会发送你的信息。</small></div></div></section></template>
 
@@ -225,6 +271,6 @@ function addCart(id) { if (!cart.value.includes(id)) cart.value.push(id); notify
     <footer v-if="page !== '/login'" class="footer"><div class="container footer-main"><div><div class="footer-brand"><span class="brand-mark"><span></span><span></span><span></span><span></span></span><strong>智启未来</strong></div><p>科技赋能教育，创意点亮未来。<br>和每一位探索者一起，拥抱无限可能。</p></div><div class="footer-links"><div><strong>探索平台</strong><button @click="go('/courses')">教学中心</button><button @click="go('/create')">创作中心</button><button @click="go('/works')">作品展示</button></div><div><strong>关于我们</strong><button @click="go('/about')">平台介绍</button><button @click="go('/news')">新闻资讯</button><button @click="go('/contact')">联系我们</button></div><div><strong>更多服务</strong><button @click="go('/organization')">学校与机构</button><button @click="go('/shop')">商品与课程</button><button @click="go('/admin')">管理后台</button></div></div></div><div class="container footer-bottom"><span>© 2026 智启未来科技教育平台. 前端演示版</span><span>让想象力成为创造力 <Sparkles :size="15" /></span></div></footer>
 
     <div v-if="toast" class="toast"><CheckCircle2 :size="18" />{{ toast }}</div>
-    <div v-if="dialog" class="modal-backdrop" @click.self="dialog=null"><div class="modal"><button class="modal-close" @click="dialog=null" aria-label="关闭"><X :size="19" /></button><template v-if="dialog.kind==='course' && currentCourse"><span class="kicker">COURSE DETAILS</span><div :class="['modal-icon',currentCourse.color]"><component :is="iconMap[currentCourse.icon]" :size="31" /></div><h2>{{ currentCourse.title }}</h2><p>{{ currentCourse.summary }}</p><div class="modal-meta"><span>{{ currentCourse.type }}</span><span>{{ currentCourse.level }}</span><span>{{ currentCourse.lessons }} 课时</span></div><h3>课程章节</h3><div class="chapter-list"><div v-for="(chapter,i) in currentCourse.chapters" :key="chapter"><span>0{{ i+1 }}</span>{{ chapter }}<Play :size="15" /></div></div><div class="modal-actions"><button class="btn btn-outline" @click="toggleFavorite(currentCourse.id)"><Heart :size="16" :fill="store.favorites.includes(currentCourse.id)?'currentColor':'none'" />{{ store.favorites.includes(currentCourse.id)?'已收藏':'收藏课程' }}</button><button class="btn btn-primary" @click="enroll(currentCourse.id)">{{ store.enrolled.includes(currentCourse.id)?'继续学习':'开始学习' }} <ArrowRight :size="16" /></button></div></template><template v-else-if="dialog.kind==='news'"><span class="kicker">{{ dialog.item.category }} / {{ dialog.item.date }}</span><h2>{{ dialog.item.title }}</h2><p>{{ dialog.item.excerpt }}</p><div class="article-body"><p>{{ dialog.item.excerpt }}</p><p>更多详细内容可在新闻管理中补充发布。关注平台动态，一起发现科技教育的更多可能。</p></div></template><template v-else-if="dialog.kind==='work'"><span class="kicker">STUDENT SHOWCASE</span><div :class="['modal-icon',dialog.item.color]"><component :is="iconMap[dialog.item.icon] || Sparkles" :size="31" /></div><h2>{{ dialog.item.title }}</h2><p>{{ dialog.item.description }}</p><div class="modal-meta"><span>{{ dialog.item.type }}</span><span>创作者：{{ dialog.item.author }}</span></div><div class="notice-bar"><CircleHelp :size="18" />作品文件与在线运行需要接入文件服务后展示。</div></template><template v-else-if="dialog.kind==='admin-add'"><span class="kicker">CONTENT MANAGEMENT</span><h2>新增{{ adminTab.replace('管理','') }}</h2><label class="form-field">名称<input v-model="formTitle" placeholder="请输入名称" /></label><label class="form-field">{{ adminTab==='新闻管理'?'摘要':'说明' }}<textarea v-model="formDescription" placeholder="请输入内容说明"></textarea></label><label v-if="adminTab==='新闻管理'" class="form-field">分类<select v-model="formCategory"><option>平台动态</option><option>教学新闻</option><option>学校新闻</option><option>公告</option></select></label><button class="btn btn-primary modal-submit" @click="addAdminItem">保存内容 <Check :size="16" /></button></template></div></div>
+    <div v-if="dialog" class="modal-backdrop" @click.self="dialog=null"><div class="modal"><button class="modal-close" @click="dialog=null" aria-label="关闭"><X :size="19" /></button><template v-if="dialog.kind==='course' && currentCourse"><span class="kicker">COURSE DETAILS</span><div :class="['modal-icon',currentCourse.color]"><component :is="iconMap[currentCourse.icon]" :size="31" /></div><h2>{{ currentCourse.title }}</h2><p>{{ currentCourse.summary }}</p><div class="modal-meta"><span>{{ currentCourse.type }}</span><span>{{ currentCourse.level }}</span><span>{{ currentCourse.lessons }} 课时</span></div><h3>课程章节</h3><div class="chapter-list"><div v-for="(chapter,i) in currentCourse.chapters" :key="chapter"><span>0{{ i+1 }}</span>{{ chapter }}<Play :size="15" /></div></div><div class="modal-actions"><button class="btn btn-outline" @click="toggleFavorite(currentCourse.id)"><Heart :size="16" :fill="store.favorites.includes(currentCourse.id)?'currentColor':'none'" />{{ store.favorites.includes(currentCourse.id)?'已收藏':'收藏课程' }}</button><button class="btn btn-primary" @click="enroll(currentCourse.id)">{{ store.enrolled.includes(currentCourse.id)?'继续学习':'开始学习' }} <ArrowRight :size="16" /></button></div></template><template v-else-if="dialog.kind==='news'"><span class="kicker">{{ dialog.item.category }} / {{ dialog.item.date }}</span><h2>{{ dialog.item.title }}</h2><p>{{ dialog.item.excerpt }}</p><div class="article-body"><p>{{ dialog.item.excerpt }}</p><p>更多详细内容可在新闻管理中补充发布。关注平台动态，一起发现科技教育的更多可能。</p></div></template><template v-else-if="dialog.kind==='work'"><span class="kicker">STUDENT SHOWCASE</span><div :class="['modal-icon',dialog.item.color]"><component :is="iconMap[dialog.item.icon] || Sparkles" :size="31" /></div><h2>{{ dialog.item.title }}</h2><p>{{ dialog.item.description }}</p><div class="modal-meta"><span>{{ dialog.item.type }}</span><span>创作者：{{ dialog.item.author }}</span></div><div class="notice-bar"><CircleHelp :size="18" />作品文件与在线运行需要接入文件服务后展示。</div></template><template v-else-if="dialog.kind==='admin-add'"><span class="kicker">CONTENT MANAGEMENT</span><h2>新增{{ adminTab.replace('管理','') }}</h2><label class="form-field">名称<input v-model="formTitle" placeholder="请输入名称" /></label><label class="form-field">{{ adminTab==='新闻管理'?'摘要':'说明' }}<textarea v-model="formDescription" placeholder="请输入内容说明"></textarea></label><label v-if="adminTab==='新闻管理'" class="form-field">分类<select v-model="formCategory"><option v-for="category in newsTabs.slice(1)" :key="category">{{ category }}</option></select></label><button class="btn btn-primary modal-submit" @click="addAdminItem">保存内容 <Check :size="16" /></button></template></div></div>
   </div>
 </template>
