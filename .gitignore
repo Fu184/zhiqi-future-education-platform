@@ -1,0 +1,11 @@
+.idea/
+**/node_modules/
+**/dist/
+**/.vite/
+**/target/
+**/build/
+**/.gradle/
+*.log
+.browser-*/
+**/.env.local
+**/.env.*.local
