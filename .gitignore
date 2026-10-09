@@ -1,11 +1,49 @@
+# 本机 IDE 状态；共享的 .run/ 运行配置保留提交
 .idea/
+.vscode/
+*.iml
+
+# 依赖、编译产物和工具缓存
 **/node_modules/
 **/dist/
 **/.vite/
 **/target/
 **/build/
 **/.gradle/
-*.log
+**/coverage/
+**/__pycache__/
+*.pyc
+
+# 真实连接配置和密钥；示例配置必须提交
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+
+# 本地数据库文件；建表 SQL 不忽略
+/backend/data/
+/data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite3
+*.mv.db
+*.trace.db
+*.lock.db
+
+# 截图、测试报告、临时文件和历史预览
+/artifacts/
+/frontend/previews/
 .browser-*/
-**/.env.local
-**/.env.*.local
+*.log
+*.tmp
+*.bak
+*.swp
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini

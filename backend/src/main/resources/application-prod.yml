@@ -1,0 +1,4 @@
+app:
+  production: true
+  sms:
+    mode: ${SMS_MODE:webhook}

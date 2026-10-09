@@ -1,0 +1,10 @@
+# 与 dev 或 prod 组合使用，例如 spring.profiles.active=dev,mysql。
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DATABASE_URL:jdbc:mysql://127.0.0.1:3306/zhiqi_platform?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&sslMode=DISABLED&allowPublicKeyRetrieval=true}
+    username: ${DATABASE_USERNAME:zhiqi_app}
+    password: ${DATABASE_PASSWORD:}
+  sql:
+    init:
+      schema-locations: classpath:schema-mysql.sql

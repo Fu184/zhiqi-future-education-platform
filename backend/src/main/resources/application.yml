@@ -1,0 +1,38 @@
+server:
+  port: ${PORT:3001}
+  address: ${HOST:127.0.0.1}
+  error:
+    include-message: never
+spring:
+  application:
+    name: zhiqi-education-platform
+  profiles:
+    default: dev
+  config:
+    import: "optional:file:./.env[.properties],optional:file:./backend/.env[.properties]"
+  datasource:
+    url: ${DATABASE_URL:jdbc:h2:file:./data/platform;DB_CLOSE_ON_EXIT=FALSE;LOCK_TIMEOUT=10000}
+    username: ${DATABASE_USERNAME:sa}
+    password: ${DATABASE_PASSWORD:}
+  sql:
+    init:
+      mode: always
+      encoding: UTF-8
+  jackson:
+    mapper:
+      allow-coercion-of-scalars: false
+    deserialization:
+      accept-float-as-int: false
+app:
+  production: false
+  public-origin: ${PUBLIC_ORIGIN:}
+  bootstrap:
+    enabled: ${ADMIN_ENABLED:true}
+    phone: ${ADMIN_PHONE:}
+    password: ${ADMIN_PASSWORD:}
+    name: ${ADMIN_NAME:平台管理员}
+  sms:
+    mode: ${SMS_MODE:console}
+    secret: ${SMS_SECRET:}
+    webhook-url: ${SMS_WEBHOOK_URL:}
+    webhook-token: ${SMS_WEBHOOK_TOKEN:}

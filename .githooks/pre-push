@@ -1,0 +1,9 @@
+#!/bin/sh
+# 拦截实际推送的提交；删除远端分支没有文件可检查。
+set -eu
+cd "$(git rev-parse --show-toplevel)"
+while read -r local_ref local_oid remote_ref remote_oid; do
+  case "$local_oid" in
+    *[!0]*) node scripts/check-git-files.mjs --committed --ref "$local_oid" ;;
+  esac
+done

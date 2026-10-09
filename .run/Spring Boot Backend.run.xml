@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Spring Boot 后端" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="com.zhiqi.platform.PlatformApplication" />
+    <module name="education-platform" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/backend" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
