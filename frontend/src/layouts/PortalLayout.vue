@@ -1,38 +1,21 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
-import { ChevronDown, ChevronRight, Menu, Search, Sparkles, UserRound } from 'lucide-vue-next'
+import { Search, Sparkles, UserRound } from 'lucide-vue-next'
 import { authStore as store } from '../stores/auth'
 import { nav } from '../config/portal'
 import { useUi } from '../composables/useUi'
 import { landingPage, logout } from '../services/auth'
-const { route, page, mobileOpen, go, notify, isNavActive } = useUi()
-const openNav = ref(null)
-const header = ref(null)
-function closeMenus() {
-  openNav.value = null
-  mobileOpen.value = false
-}
+const { route, page, go, notify } = useUi()
+const navigationItems = nav.flatMap(({ children, ...item }) => [item, ...(children || [])])
 function navigate(path) {
-  closeMenus()
   return go(path)
 }
-function dismissOutside(event) {
-  if (!header.value?.contains(event.target)) closeMenus()
+function isLinkActive(path) {
+  const [pathname, query] = path.split('?')
+  if (route.path !== pathname) return false
+  return query
+    ? route.query.section === new URLSearchParams(query).get('section')
+    : !route.query.section
 }
-function dismissEscape(event) {
-  if (event.key !== 'Escape') return
-  if (openNav.value) header.value?.querySelector('[aria-expanded="true"]')?.focus()
-  closeMenus()
-}
-watch(() => route.fullPath, closeMenus)
-onMounted(() => {
-  document.addEventListener('pointerdown', dismissOutside)
-  document.addEventListener('keydown', dismissEscape)
-})
-onUnmounted(() => {
-  document.removeEventListener('pointerdown', dismissOutside)
-  document.removeEventListener('keydown', dismissEscape)
-})
 async function signOut() {
   try {
     await logout()
@@ -44,56 +27,14 @@ async function signOut() {
 </script>
 <template>
   <div :class="['site-shell', { 'home-layout': page === '/' }]">
-    <header v-if="store.user?.role !== 'government'" ref="header" class="site-header">
+    <a class="skip-link" href="#portal-main">跳转到主要内容</a>
+    <header v-if="store.user?.role !== 'government'" class="site-header portal-header">
       <div class="header-inner container">
         <button class="brand" @click="navigate('/')" aria-label="返回首页">
           <span class="brand-mark"><span></span><span></span><span></span><span></span></span>
           <span class="brand-copy"><strong>智启未来</strong><small>科技教育云平台</small></span>
         </button>
-        <nav class="desktop-nav" aria-label="主导航">
-          <div
-            v-for="item in nav"
-            :key="item.path"
-            :class="[
-              'nav-item',
-              { 'has-children': item.children, 'is-open': openNav === item.path },
-            ]"
-            @mouseenter="openNav = item.children ? item.path : null"
-            @mouseleave="openNav = null"
-          >
-            <button
-              :class="['nav-link', { active: isNavActive(item) }]"
-              @click="navigate(item.path)"
-            >
-              {{ item.label }}
-            </button>
-            <button
-              v-if="item.children"
-              class="nav-disclosure"
-              :aria-label="`展开${item.label}子菜单`"
-              :aria-expanded="openNav === item.path"
-              :aria-controls="`nav-${item.path.slice(1)}`"
-              @click="openNav = openNav === item.path ? null : item.path"
-            >
-              <ChevronDown :size="14" />
-            </button>
-            <div
-              v-if="item.children"
-              :id="`nav-${item.path.slice(1)}`"
-              class="nav-dropdown"
-              :inert="openNav !== item.path"
-            >
-              <button
-                v-for="child in item.children"
-                :key="child.path"
-                @click="navigate(child.path)"
-              >
-                {{ child.label }}
-                <ChevronRight :size="14" />
-              </button>
-            </div>
-          </div>
-        </nav>
+        <p class="header-motto">共享优质资源 · 点亮科技梦想</p>
         <div class="header-actions">
           <button class="icon-button header-search" title="搜索课程" @click="navigate('/courses')">
             <Search :size="19" />
@@ -106,36 +47,24 @@ async function signOut() {
           </button>
           <button v-if="store.user" class="login-action" @click="navigate('/account')">账户</button>
           <button v-if="store.user" class="login-action" @click="signOut">退出</button>
-          <button
-            class="icon-button menu-button"
-            @click="mobileOpen = !mobileOpen"
-            aria-label="菜单"
-            :aria-expanded="mobileOpen"
-            aria-controls="mobile-navigation"
-          >
-            <Menu :size="23" />
-          </button>
         </div>
       </div>
-      <div v-if="mobileOpen" id="mobile-navigation" class="mobile-menu">
-        <div v-for="item in nav" :key="item.path" class="mobile-nav-group">
-          <button class="mobile-nav-main" @click="navigate(item.path)">
+      <nav class="portal-navigation" aria-label="主导航">
+        <div class="container portal-nav-list">
+          <button
+            v-for="item in navigationItems"
+            :key="item.label"
+            :class="['portal-nav-link', { active: isLinkActive(item.path) }]"
+            :aria-current="isLinkActive(item.path) ? 'page' : undefined"
+            @click="navigate(item.path)"
+          >
             {{ item.label }}
-            <ChevronRight :size="16" />
-          </button>
-          <button
-            v-for="child in item.children"
-            :key="child.path"
-            class="mobile-nav-child"
-            @click="navigate(child.path)"
-          >
-            {{ child.label }}
           </button>
         </div>
-      </div>
+      </nav>
     </header>
 
-    <main>
+    <main id="portal-main" tabindex="-1">
       <p v-if="store.sessionError" class="container form-error" role="alert">
         {{ store.sessionError }}
       </p>
@@ -181,54 +110,127 @@ async function signOut() {
 </template>
 
 <style scoped>
-.site-shell {
-  --portal-header-height: 78px;
+.footer-brand {
+  color: #243c5c;
 }
-.site-header {
-  position: sticky;
-  top: 0;
+.portal-header {
+  position: relative;
+  background: #fff;
+  box-shadow: none;
 }
 .header-inner {
-  height: var(--portal-header-height);
+  height: auto;
+  min-height: 92px;
+  padding-block: 20px;
+  gap: 24px;
 }
-.home-layout .site-header {
-  position: fixed;
-  inset: 0 0 auto;
+.header-motto {
+  margin: 0 auto 0 24px;
+  color: #778397;
+  font-size: 14px;
+  letter-spacing: 2px;
 }
-.nav-item:not(.is-open) .nav-dropdown {
-  transition: none;
+.header-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
 }
-.nav-disclosure {
-  display: grid;
-  place-items: center;
-  padding: 8px 4px;
-  border: 0;
-  background: transparent;
-  color: #777;
+.login-action {
+  color: #2367b5;
+  border-color: #dce7f4;
   border-radius: 5px;
 }
-.nav-disclosure svg {
-  transition: transform 0.2s ease;
+.login-action:hover {
+  background: #edf5ff;
 }
-.nav-disclosure:focus-visible {
-  outline: 2px solid #cf627b;
-  outline-offset: 2px;
+.portal-navigation {
+  background: #edf5ff;
+  border-top: 1px solid #e4edf8;
+  border-bottom: 1px solid #dce8f5;
 }
-.nav-item.has-children .nav-link {
-  padding-right: 4px;
+.portal-nav-list {
+  width: calc(100% - 32px);
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #b7cce3 transparent;
+  align-items: center;
+  gap: 2px;
+  padding-block: 10px;
 }
-.mobile-menu {
-  max-height: calc(100dvh - var(--portal-header-height));
-  overflow-y: auto;
+.portal-nav-link {
+  flex: 1 0 auto;
+  border: 0;
+  background: transparent;
+  color: #243c5c;
+  font-size: clamp(13px, 0.98vw, 15px);
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+  padding: 10px clamp(4px, 0.4vw, 8px);
+  border-radius: 4px;
+  transition:
+    color 0.2s,
+    background 0.2s;
 }
-@media (max-width: 700px) {
-  .site-shell {
-    --portal-header-height: 70px;
+.portal-nav-link.active,
+.portal-nav-link:hover {
+  color: #176cc3;
+  background: #dfeeff;
+}
+.skip-link {
+  position: absolute;
+  top: -60px;
+  left: 20px;
+  z-index: 40;
+  padding: 10px;
+  background: #fff;
+  color: #176cc3;
+}
+.skip-link:focus {
+  top: 8px;
+}
+@media (max-width: 1000px) {
+  .header-motto {
+    display: none;
+  }
+}
+@media (max-width: 600px) {
+  .header-inner {
+    min-height: 80px;
+    padding-block: 16px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .brand-copy strong {
+    font-size: 19px;
+  }
+  .header-actions {
+    gap: 6px;
+    margin-left: auto;
+  }
+  .login-action span {
+    display: inline;
+  }
+  .header-search {
+    display: none;
+  }
+  .login-action {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  .portal-nav-list {
+    gap: 4px;
+    padding-block: 10px;
+  }
+  .portal-nav-link {
+    font-size: 13px;
+    padding: 8px 10px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .nav-disclosure svg,
-  .nav-dropdown {
+  .portal-nav-link {
     transition: none;
   }
 }
