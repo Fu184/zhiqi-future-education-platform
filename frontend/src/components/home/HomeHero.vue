@@ -1,186 +1,244 @@
 <script setup>
-import { ArrowDown, ArrowUpRight, Play } from 'lucide-vue-next'
-import { useUi } from '../../composables/useUi'
-
-const { go } = useUi()
-defineEmits(['explore'])
+import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-vue-next'
+import blossom from '../../../img/DSC_2630.jpg'
+import spring from '../../../img/DSC_2744.jpg'
+import bookshop from '../../../img/DSC_0830.JPG'
+const slides = [
+  { src: blossom, alt: '枝头盛开的粉色花朵', label: '自然之美', position: '50% 48%' },
+  { src: spring, alt: '明亮天空下的春日花枝', label: '春日发现', position: '50% 50%' },
+  { src: bookshop, alt: '夜色中亮起灯光的书店招牌', label: '阅读时光', position: '50% 52%' },
+]
+const current = ref(0),
+  paused = ref(false),
+  hovered = ref(false),
+  focused = ref(false)
+const reducedMotion = ref(false),
+  hidden = ref(false)
+const autoplay = computed(
+  () => !paused.value && !hovered.value && !focused.value && !reducedMotion.value && !hidden.value,
+)
+let timer, media
+function select(index) {
+  current.value = (index + slides.length) % slides.length
+}
+function changeMotion() {
+  reducedMotion.value = media.matches
+}
+function changeVisibility() {
+  hidden.value = document.hidden
+}
+onMounted(() => {
+  media = window.matchMedia('(prefers-reduced-motion: reduce)')
+  changeMotion()
+  changeVisibility()
+  media.addEventListener('change', changeMotion)
+  document.addEventListener('visibilitychange', changeVisibility)
+  timer = setInterval(() => {
+    if (autoplay.value) select(current.value + 1)
+  }, 5000)
+})
+onUnmounted(() => {
+  clearInterval(timer)
+  media?.removeEventListener('change', changeMotion)
+  document.removeEventListener('visibilitychange', changeVisibility)
+})
 </script>
 
 <template>
-  <section class="home-hero" aria-labelledby="home-title">
-    <div class="home-hero-content">
-      <p class="home-hero-eyebrow">智启未来 · 科技教育云平台</p>
-      <h1 id="home-title">让每一个奇思妙想<br /><span>都有发生的可能</span></h1>
-      <p class="home-hero-description">
-        从探索知识到动手创造，连接课程、任务与作品。<br />
-        在这里，开启属于你的未来学习之旅。
-      </p>
-      <div class="home-hero-code" aria-label="让想象力成为创造力">
-        <span>print</span>(<b>"让想象力成为创造力"</b>)<i aria-hidden="true">_</i>
+  <section
+    class="home-carousel"
+    aria-label="首页图片轮播"
+    aria-roledescription="轮播图"
+    @mouseenter="hovered = true"
+    @mouseleave="hovered = false"
+    @focusin="focused = true"
+    @focusout="focused = $event.currentTarget.contains($event.relatedTarget)"
+    @keydown.left.prevent="select(current - 1)"
+    @keydown.right.prevent="select(current + 1)"
+  >
+    <h1 class="visually-hidden">智启未来科技教育云平台</h1>
+    <div class="carousel-stage">
+      <div
+        v-for="(slide, index) in slides"
+        :key="slide.src"
+        :class="['carousel-slide', { 'is-active': current === index }]"
+        role="group"
+        aria-roledescription="幻灯片"
+        :aria-label="`${index + 1} / ${slides.length}：${slide.label}`"
+        :aria-hidden="current !== index"
+      >
+        <img
+          :src="slide.src"
+          :alt="slide.alt"
+          :style="{ objectPosition: slide.position }"
+          :fetchpriority="index === 0 ? 'high' : 'auto'"
+        />
       </div>
-      <div class="home-hero-actions">
-        <button class="btn btn-primary" @click="go('/courses')">
-          探索课程 <ArrowUpRight :size="18" />
-        </button>
-        <button class="btn home-create-button" @click="go('/create')">
-          <Play :size="16" />开始创作
-        </button>
-      </div>
+      <button class="carousel-arrow previous" aria-label="上一张图片" @click="select(current - 1)">
+        <ChevronLeft :size="27" />
+      </button>
+      <button class="carousel-arrow next" aria-label="下一张图片" @click="select(current + 1)">
+        <ChevronRight :size="27" />
+      </button>
     </div>
-    <button class="home-scroll-cue" @click="$emit('explore')">
-      <span>向下探索你的学习空间</span><ArrowDown :size="20" />
-    </button>
+    <div class="carousel-toolbar container">
+      <div class="carousel-pagination">
+        <button
+          v-for="(slide, index) in slides"
+          :key="slide.src"
+          :class="['carousel-dot', { active: current === index }]"
+          :aria-label="`切换到第 ${index + 1} 张图片：${slide.label}`"
+          :aria-current="current === index ? 'true' : undefined"
+          @click="select(index)"
+        >
+          <span></span>
+        </button>
+        <button
+          class="carousel-pause"
+          :aria-label="paused ? '播放轮播' : '暂停轮播'"
+          :aria-pressed="paused"
+          @click="paused = !paused"
+        >
+          <component :is="paused ? Play : Pause" :size="15" />
+        </button>
+      </div>
+      <span class="carousel-caption" aria-live="off"
+        >{{ slides[current].label
+        }}<span class="carousel-count">0{{ current + 1 }} / 0{{ slides.length }}</span></span
+      >
+    </div>
   </section>
 </template>
 
 <style scoped>
-.home-hero {
-  min-height: 100vh;
-  min-height: 100dvh;
-  box-sizing: border-box;
-  position: relative;
-  isolation: isolate;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: calc(var(--portal-header-height) + 56px) 24px 112px;
-  background: #fffafb;
-  overflow: hidden;
-}
-.home-hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background:
-    radial-gradient(ellipse at 30% 38%, #fbe4e7 0%, transparent 52%),
-    radial-gradient(ellipse at 76% 60%, #ede9fb 0%, transparent 48%),
-    linear-gradient(175deg, transparent 75%, #fff 100%);
-}
-.home-hero-content {
-  text-align: center;
-  max-width: 900px;
-}
-.home-hero-eyebrow {
-  color: #8b6976;
-  font-size: 14px;
-  letter-spacing: 3px;
-  margin: 0 0 24px;
-}
-h1 {
-  margin: 0;
-  color: #35333a;
-  font-size: clamp(38px, 4.6vw, 68px);
-  line-height: 1.3;
-  letter-spacing: -2px;
-  font-weight: 800;
-  text-wrap: balance;
-}
-h1 span {
-  color: #cf627b;
-}
-.home-hero-description {
-  color: #75717b;
-  font-size: 17px;
-  line-height: 1.9;
-  margin: 30px 0 24px;
-  text-wrap: balance;
-}
-.home-hero-code {
-  font-family: Consolas, monospace;
-  font-size: 17px;
-  color: #5a5462;
-}
-.home-hero-code > span {
-  color: #8465aa;
-}
-.home-hero-code b {
-  font-weight: 500;
-  color: #b25f78;
-}
-.home-hero-code i {
-  font-style: normal;
-  animation: home-cursor 1.2s step-end infinite;
-}
-.home-hero-actions {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin-top: 36px;
-}
-.home-create-button {
-  background: #fff9;
-  color: #61596c;
-  border: 1px solid #ddd4e0;
-}
-.home-create-button:hover {
+.home-carousel {
   background: #fff;
 }
-.home-scroll-cue {
+.visually-hidden {
   position: absolute;
-  bottom: 28px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.carousel-stage {
+  position: relative;
+  height: clamp(280px, 31vw, 480px);
+  overflow: hidden;
+  background: #eef2f4;
+}
+.carousel-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.65s ease;
+}
+.carousel-slide.is-active {
+  opacity: 1;
+}
+.carousel-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 64px;
   border: 0;
-  background: transparent;
-  color: #8c7e8d;
+  border-radius: 5px;
+  color: #fff;
+  background: #15283e55;
+  transition: background 0.2s;
+}
+.carousel-arrow:hover {
+  background: #15283ea6;
+}
+.previous {
+  left: max(20px, calc((100% - 1232px) / 2));
+}
+.next {
+  right: max(20px, calc((100% - 1232px) / 2));
+}
+.carousel-toolbar {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  min-height: 52px;
+  gap: 16px;
+}
+.carousel-pagination {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.carousel-dot {
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 0;
+  padding: 12px 7px;
+}
+.carousel-dot span {
+  width: 7px;
+  height: 7px;
+  background: #d3dbe4;
+  border-radius: 8px;
+  transition:
+    width 0.2s,
+    background 0.2s;
+}
+.carousel-dot.active span {
+  width: 30px;
+  background: #2871c1;
+}
+.carousel-pause {
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 0;
+  padding: 9px;
+  color: #68778a;
+  margin-left: 8px;
+}
+.carousel-caption {
+  color: #66788d;
   font-size: 12px;
-  padding: 12px 18px;
 }
-button:focus-visible {
-  outline: 2px solid #b25f78;
-  outline-offset: 5px;
+.carousel-count {
+  margin-left: 20px;
+  font-variant-numeric: tabular-nums;
+  color: #a3afbc;
 }
-@keyframes home-cursor {
-  50% {
-    opacity: 0;
+@media (max-width: 600px) {
+  .carousel-stage {
+    height: 250px;
   }
-}
-@media (max-width: 700px) {
-  .home-hero {
-    padding-top: calc(var(--portal-header-height) + 40px);
+  .carousel-arrow {
+    width: 32px;
+    height: 48px;
   }
-  .home-hero-eyebrow {
-    font-size: 12px;
-    letter-spacing: 2px;
+  .previous {
+    left: 12px;
   }
-  h1 {
-    font-size: clamp(30px, 8.5vw, 46px);
-    letter-spacing: -1px;
+  .next {
+    right: 12px;
   }
-  .home-hero-description {
-    font-size: 14px;
-    margin-top: 24px;
-  }
-  .home-hero-code {
-    font-size: 13px;
-  }
-  .home-hero-actions {
-    margin-top: 28px;
-  }
-}
-@media (max-height: 650px) and (min-width: 701px) {
-  .home-hero {
-    padding-top: calc(var(--portal-header-height) + 24px);
-    padding-bottom: 90px;
-  }
-  h1 {
-    font-size: 42px;
-  }
-  .home-hero-description {
-    margin: 18px 0;
-  }
-  .home-hero-actions {
-    margin-top: 22px;
+  .carousel-count {
+    margin-left: 8px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .home-hero-code i {
-    animation: none;
+  .carousel-slide,
+  .carousel-dot span {
+    transition: none;
   }
 }
 </style>
