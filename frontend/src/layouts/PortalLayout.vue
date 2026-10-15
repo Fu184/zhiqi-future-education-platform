@@ -1,13 +1,25 @@
 <script setup>
-import { Search, Sparkles, UserRound } from 'lucide-vue-next'
+import { ref, watch } from 'vue'
+import { ChevronDown, Search, Sparkles, UserRound } from 'lucide-vue-next'
 import { authStore as store } from '../stores/auth'
 import { nav } from '../config/portal'
 import { useUi } from '../composables/useUi'
 import { landingPage, logout } from '../services/auth'
-const { route, page, go, notify } = useUi()
-const navigationItems = nav.flatMap(({ children, ...item }) => [item, ...(children || [])])
+const { route, page, go, notify, isNavActive } = useUi()
+const openMenu = ref(null)
+watch(
+  () => route.fullPath,
+  () => {
+    openMenu.value = null
+  },
+)
 function navigate(path) {
+  openMenu.value = null
   return go(path)
+}
+function closeMenu(event) {
+  openMenu.value = null
+  event.currentTarget.querySelector('.portal-nav-toggle')?.focus()
 }
 function isLinkActive(path) {
   const [pathname, query] = path.split('?')
@@ -51,15 +63,54 @@ async function signOut() {
       </div>
       <nav class="portal-navigation" aria-label="主导航">
         <div class="container portal-nav-list">
-          <button
-            v-for="item in navigationItems"
+          <div
+            v-for="(item, index) in nav"
             :key="item.label"
-            :class="['portal-nav-link', { active: isLinkActive(item.path) }]"
-            :aria-current="isLinkActive(item.path) ? 'page' : undefined"
-            @click="navigate(item.path)"
+            class="portal-nav-item"
+            @pointerenter="
+              $event.pointerType === 'mouse' && (openMenu = item.children ? item.path : null)
+            "
+            @pointerleave="$event.pointerType === 'mouse' && (openMenu = null)"
+            @focusout="!$event.currentTarget.contains($event.relatedTarget) && (openMenu = null)"
+            @keydown.esc.stop.prevent="closeMenu"
           >
-            {{ item.label }}
-          </button>
+            <div :class="['portal-nav-heading', { active: isNavActive(item) }]">
+              <button
+                class="portal-nav-link"
+                :aria-current="isLinkActive(item.path) ? 'page' : undefined"
+                @click="navigate(item.path)"
+              >
+                {{ item.label }}
+              </button>
+              <button
+                v-if="item.children"
+                class="portal-nav-toggle"
+                :aria-label="`${item.label}下拉菜单`"
+                :aria-expanded="openMenu === item.path"
+                :aria-controls="`portal-subnav-${index}`"
+                @click="openMenu = openMenu === item.path ? null : item.path"
+              >
+                <ChevronDown :size="14" />
+              </button>
+            </div>
+            <div
+              v-if="item.children"
+              v-show="openMenu === item.path"
+              :id="`portal-subnav-${index}`"
+              class="portal-subnav"
+              :aria-label="`${item.label}下级栏目`"
+            >
+              <button
+                v-for="child in item.children"
+                :key="child.path"
+                :class="{ active: isLinkActive(child.path) }"
+                :aria-current="isLinkActive(child.path) ? 'page' : undefined"
+                @click="navigate(child.path)"
+              >
+                {{ child.label }}
+              </button>
+            </div>
+          </div>
         </div>
       </nav>
     </header>
@@ -151,16 +202,12 @@ async function signOut() {
 .portal-nav-list {
   width: calc(100% - 32px);
   display: flex;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #b7cce3 transparent;
+  flex-wrap: wrap;
   align-items: center;
   gap: 2px;
   padding-block: 10px;
 }
 .portal-nav-link {
-  flex: 1 0 auto;
   border: 0;
   background: transparent;
   color: #243c5c;
@@ -168,16 +215,72 @@ async function signOut() {
   font-weight: 500;
   line-height: 1.5;
   white-space: nowrap;
-  padding: 10px clamp(4px, 0.4vw, 8px);
+  padding: 10px 8px;
   border-radius: 4px;
   transition:
     color 0.2s,
     background 0.2s;
 }
-.portal-nav-link.active,
-.portal-nav-link:hover {
+.portal-nav-heading.active,
+.portal-nav-heading:hover {
   color: #176cc3;
   background: #dfeeff;
+}
+.portal-nav-item {
+  position: relative;
+  flex: 1 0 auto;
+}
+.portal-nav-heading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 4px;
+}
+.portal-nav-heading.active .portal-nav-link,
+.portal-nav-heading:hover .portal-nav-link {
+  color: inherit;
+}
+.portal-nav-toggle {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  padding: 6px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+.portal-nav-toggle[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+.portal-subnav {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 35;
+  min-width: max(100%, 150px);
+  padding: 8px;
+  border: 1px solid #dce8f5;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 10px 24px #243c5c1a;
+}
+.portal-subnav button {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #243c5c;
+  text-align: left;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.portal-subnav button:hover,
+.portal-subnav button:focus-visible,
+.portal-subnav button.active {
+  color: #176cc3;
+  background: #edf5ff;
 }
 .skip-link {
   position: absolute;

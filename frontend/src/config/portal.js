@@ -34,36 +34,54 @@ export const nav = [
     label: '新闻资讯',
     path: '/news',
     children: [
-      { label: '相关活动', path: '/news?section=activities' },
-      { label: '赛事', path: '/news?section=events' },
-      { label: '政策', path: '/news?section=policies' },
+      { label: '相关政策', path: '/news?section=policies' },
+      { label: '动态', path: '/news?section=updates' },
     ],
   },
   {
     label: '教学中心',
     path: '/courses',
+    children: [{ label: '课程资源', path: '/courses' }],
+  },
+  { label: '教师成长中心', path: '/teacher-growth' },
+  {
+    label: '赛事',
+    path: '/competitions',
     children: [
-      { label: '教师成长中心', path: '/teacher-growth' },
-      { label: '课程资源', path: '/courses' },
-      { label: '学习任务', path: '/tasks' },
-      { label: '作业表', path: '/assignments' },
-      { label: '我的作品', path: '/my-works' },
-      { label: '创作中心', path: '/create' },
+      { label: '赛事服务', path: '/competitions/services' },
+      { label: '升学规划', path: '/competitions/planning' },
+      { label: '科技特长生', path: '/competitions/talents' },
+      { label: '赛事辅导', path: '/competitions/coaching' },
+      { label: '等级考试', path: '/competitions/exams' },
     ],
+  },
+  {
+    label: '研学',
+    path: '/study-tours',
+    children: [
+      { label: '教师研学', path: '/study-tours/teachers' },
+      { label: '青少年研学', path: '/study-tours/teens' },
+      { label: '中小学研学', path: '/study-tours/schools' },
+    ],
+  },
+  { label: '培训', path: '/training' },
+  {
+    label: '创作中心',
+    path: '/create',
+    children: [{ label: '我的作品', path: '/my-works' }],
   },
   { label: '商城', path: '/shop' },
   {
     label: '关于我们',
     path: '/about',
-    children: [
-      { label: '公司介绍', path: '/about' },
-      { label: '师资介绍', path: '/faculty' },
-      { label: '课程介绍', path: '/course-intro' },
-    ],
   },
-  { label: '加入我们', path: '/join' },
 ]
-export const newsSections = { activities: '相关活动', events: '赛事', policies: '政策' }
+export const newsSections = {
+  activities: '相关活动',
+  events: '赛事',
+  policies: '政策',
+  updates: '平台动态',
+}
 export const newsTabs = [
   '全部',
   '相关活动',
@@ -75,10 +93,40 @@ export const newsTabs = [
   '公告',
 ]
 export const navGroups = {
-  '/courses': ['/courses', '/teacher-growth', '/tasks', '/assignments', '/my-works', '/create'],
+  '/courses': ['/courses', '/tasks', '/assignments'],
+  '/create': ['/create', '/my-works'],
+  '/competitions': [
+    '/competitions',
+    ...nav.find((item) => item.path === '/competitions').children.map((item) => item.path),
+  ],
+  '/study-tours': [
+    '/study-tours',
+    ...nav.find((item) => item.path === '/study-tours').children.map((item) => item.path),
+  ],
   '/about': ['/about', '/faculty', '/course-intro'],
 }
 export const infoPages = {
+  ...Object.fromEntries(
+    nav
+      .filter((item) => ['/competitions', '/study-tours', '/training'].includes(item.path))
+      .flatMap((item) => [item, ...(item.children || [])])
+      .map((item) => [
+        item.path,
+        {
+          title: item.label,
+          kicker: item.path.startsWith('/competitions')
+            ? 'COMPETITIONS'
+            : item.path.startsWith('/study-tours')
+              ? 'STUDY TOURS'
+              : 'TRAINING',
+          description: `了解${item.label}的相关信息与服务。`,
+          body: `${item.label}内容正在整理，具体安排将在发布后展示。`,
+          action: '联系我们',
+          target: '/contact',
+          icon: GraduationCap,
+        },
+      ]),
+  ),
   '/teacher-growth': {
     title: '教师成长中心',
     kicker: 'TEACHER DEVELOPMENT',

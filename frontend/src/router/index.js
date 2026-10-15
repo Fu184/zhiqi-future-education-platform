@@ -1,9 +1,17 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { authStore as store } from '../stores/auth'
 import { restoreSession, managementRoles } from '../services/auth'
+import { infoPages } from '../config/portal'
 
 // URL、页面名、源码一一对应；权限由路由入口和后端共同校验。
 const routes = [
+  ...Object.keys(infoPages)
+    .filter((path) => /^\/(competitions|study-tours|training)(\/|$)/.test(path))
+    .map((path) => ({
+      path,
+      name: infoPages[path].title,
+      component: () => import('../components/InfoPage.vue'),
+    })),
   { path: '/', name: '首页', component: () => import('../pages/HomePage.vue') },
   { path: '/news', name: '新闻资讯', component: () => import('../pages/NewsPage.vue') },
   { path: '/courses', name: '课程资源', component: () => import('../pages/CoursesPage.vue') },
