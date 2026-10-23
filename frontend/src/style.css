@@ -273,7 +273,7 @@ h4 {
 .hero-image {
   position: absolute;
   inset: 0;
-  background-image: url('../DSC_4070.jpg');
+  background-image: url('../img/DSC_4070.webp');
   background-size: cover;
   background-position: center 52%;
   filter: saturate(0.68);
@@ -2250,7 +2250,7 @@ h4 {
 .login-visual {
   background:
     linear-gradient(90deg, #0b2a62ca, #1c55a180),
-    url('../DSC_4070.jpg') center/cover;
+    url('../img/DSC_4070.webp') center/cover;
   color: #fff;
   display: flex;
   align-items: center;

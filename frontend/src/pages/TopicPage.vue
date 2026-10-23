@@ -3,6 +3,10 @@ import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { ArrowRight, ChevronRight } from 'lucide-vue-next'
 import { homeSections } from '../data/homeSections'
+import { topicContent } from '../data/topicContent'
+import { featuredCourses } from '../data'
+import { useCourses } from '../composables/useCourses'
+const { openCourse } = useCourses()
 const route = useRoute()
 const section = computed(() =>
   homeSections.find(
@@ -11,6 +15,7 @@ const section = computed(() =>
   ),
 )
 const topic = computed(() => section.value.items.find((item) => item.path === route.path))
+const content = computed(() => topicContent[route.path])
 </script>
 
 <template>
@@ -29,16 +34,53 @@ const topic = computed(() => section.value.items.find((item) => item.path === ro
     </header>
     <section v-if="topic" class="topic-detail">
       <component :is="topic.icon" :size="48" :stroke-width="1.25" />
-      <h2>{{ topic.title }}</h2>
-      <p v-if="topic.target">{{ topic.description }} 点击下方入口查看现有资源。</p>
-      <p v-else>
-        本栏目将集中发布{{
-          topic.title
-        }}的相关内容，具体资源与安排将在确认后更新。欢迎联系我们了解相关信息。
-      </p>
-      <RouterLink class="topic-action" :to="topic.target || '/contact'"
-        >{{ topic.action || '联系我们' }}<ArrowRight :size="16"
-      /></RouterLink>
+      <h2>栏目介绍</h2>
+      <p>{{ content.overview }}</p>
+      <div class="topic-guides">
+        <section v-for="block in content.blocks" :key="block.title">
+          <h3>{{ block.title }}</h3>
+          <ul>
+            <li v-for="item in block.items" :key="item">{{ item }}</li>
+          </ul>
+        </section>
+      </div>
+      <p v-if="content.notice" class="topic-notice">{{ content.notice }}</p>
+      <div class="topic-actions">
+        <template v-for="link in content.links" :key="link.label">
+          <RouterLink v-if="link.to" class="topic-action" :to="link.to"
+            >{{ link.label }}<ArrowRight :size="16"
+          /></RouterLink>
+          <a
+            v-else
+            class="topic-action topic-action-external"
+            :href="link.href"
+            target="_blank"
+            rel="noopener noreferrer"
+            >{{ link.label }}（外部网站）<ArrowRight :size="16"
+          /></a>
+        </template>
+      </div>
+      <section
+        v-if="content.courses"
+        class="topic-resources"
+        aria-labelledby="topic-resource-title"
+      >
+        <h2 id="topic-resource-title">课程目录</h2>
+        <p>以下为当前展示的课程资料，实际开放安排以正式发布的信息为准。</p>
+        <div class="topic-course-grid">
+          <button
+            v-for="course in featuredCourses"
+            :key="course.id"
+            class="topic-course"
+            @click="openCourse(course.id)"
+          >
+            <small>{{ course.type }} · {{ course.level }} · {{ course.lessons }} 课时</small>
+            <h3>{{ course.title }}</h3>
+            <p>{{ course.summary }}</p>
+            <span>查看课程介绍 <ArrowRight :size="15" /></span>
+          </button>
+        </div>
+      </section>
     </section>
     <section v-else class="topic-list" :aria-label="section.title + '栏目'">
       <RouterLink
@@ -92,6 +134,86 @@ const topic = computed(() => section.value.items.find((item) => item.path === ro
   color: #7a899b;
   line-height: 1.9;
   font-size: 14px;
+}
+.topic-guides {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid #e5eaf1;
+}
+.topic-guides h3 {
+  margin: 0 0 12px;
+  font-size: 17px;
+  color: #293b51;
+}
+.topic-guides ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #64778d;
+  font-size: 14px;
+  line-height: 1.9;
+}
+.topic-guides li + li {
+  margin-top: 10px;
+}
+.topic-detail .topic-notice {
+  max-width: none;
+  padding: 16px 20px;
+  margin: 28px 0 8px;
+  border-left: 3px solid #809db8;
+  background: #f0f4f8;
+  color: #52677d;
+  font-size: 13px;
+}
+.topic-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.topic-action-external {
+  color: #28567f;
+  background: #edf3f8;
+}
+.topic-action-external:hover {
+  color: #fff;
+}
+.topic-resources {
+  margin-top: 36px;
+  padding-top: 28px;
+  border-top: 1px solid #e5eaf1;
+}
+.topic-course-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.topic-course {
+  text-align: left;
+  padding: 22px;
+  border: 1px solid #e0e7ef;
+  background: #fff;
+  color: #293b51;
+}
+.topic-course:hover {
+  border-color: #8baaca;
+}
+.topic-course h3 {
+  font-size: 16px;
+  line-height: 1.7;
+  margin: 12px 0;
+}
+.topic-course small {
+  font-size: 12px;
+  color: #687d96;
+}
+.topic-course span {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: #2875bd;
 }
 .topic-list {
   display: grid;
@@ -170,6 +292,10 @@ const topic = computed(() => section.value.items.find((item) => item.path === ro
   font-size: 13px;
 }
 @media (max-width: 700px) {
+  .topic-guides,
+  .topic-course-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .topic-list {
     grid-template-columns: minmax(0, 1fr);
   }

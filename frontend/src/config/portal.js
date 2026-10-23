@@ -44,7 +44,7 @@ export const nav = [
     path: '/courses',
     children: [{ label: '课程资源', path: '/courses' }],
   },
-  { label: '教师成长中心', path: '/teacher-growth' },
+  { label: '教师培养中心', path: '/teacher-growth' },
   {
     label: '赛事',
     path: '/competitions',
@@ -145,7 +145,7 @@ export const infoPages = {
       ]),
   ),
   '/teacher-growth': {
-    title: '教师成长中心',
+    title: '教师培养中心',
     kicker: 'TEACHER DEVELOPMENT',
     description: '面向教师的课程与教学支持入口。',
     body: '教师培训和教学资料正在整理。你可以先浏览现有课程资源。',

@@ -1,6 +1,6 @@
 <script setup>
 import { onUnmounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ArrowRight } from 'lucide-vue-next'
 import { authStore as store } from '../stores/auth'
 import { api } from '../services/api'
@@ -153,7 +153,25 @@ async function submit() {
         <small v-if="mode === 'register'"
           >自行注册为普通用户，购买学习资料后开通学习权限。机构与政府账号由管理员创建。</small
         >
+        <p class="login-information-links">
+          <RouterLink to="/privacy">隐私说明</RouterLink><span> · </span
+          ><RouterLink to="/site-notice">网站使用说明</RouterLink>
+        </p>
       </form>
     </div>
   </section>
 </template>
+
+<style scoped>
+.login-information-links {
+  margin: 8px 0 0;
+  color: #687d96;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.login-information-links a:hover {
+  color: #214f7d;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+</style>

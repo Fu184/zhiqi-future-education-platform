@@ -6,7 +6,7 @@ Vue 3 + Vite + Vue Router。运行 `npm install`、`npm run dev`，构建 `npm r
 
 ## 页面源码索引
 
-路由集中在 `src/router/index.js`。每个 URL 都有对应页面源码，通过文件名可以直接找到页面。
+路由集中在 `src/router/index.js`。独立业务页面按文件名查找；同类专题与网站说明复用页面组件，并从数据配置中读取内容。
 
 | URL | 页面 | 源码（src/pages/） |
 | --- | --- | --- |
@@ -26,18 +26,20 @@ Vue 3 + Vite + Vue Router。运行 `npm install`、`npm run dev`，构建 `npm r
 | /government | 政府独立数据概览 | GovernmentDashboardPage.vue |
 | /account | 账户资料 / 修改密码 | AccountPage.vue |
 | /login | 登录 / 短信注册 | LoginPage.vue |
-| /teacher-growth | 教师成长中心 | TeacherGrowthPage.vue |
+| /teacher-growth | 教师培养中心 | TopicPage.vue |
+| /course-services、/products、/competitions、/study-tours 及其首页细分栏目 | 五个中心与专题指引 | TopicPage.vue |
+| /privacy、/site-notice | 隐私说明、网站使用说明 | SiteInformationPage.vue |
 | /faculty | 师资介绍 | FacultyPage.vue |
 | /course-intro | 课程介绍 | CourseIntroPage.vue |
 | /join | 加入我们 | JoinPage.vue |
 | /about | 关于我们 | AboutPage.vue |
 | /contact | 联系我们 | ContactPage.vue |
 
-首页首屏由 `HomeHero.vue` 单独维护，随窗口高度铺满；导航子菜单在选择、按 Escape 或点击外部时收起，手机菜单选择后自动关闭。
+首页主轮播与资讯轮播由 `HomeHero.vue` 维护，主轮播位于居中的内容区，两侧留白。导航子菜单在选择、按 Escape 或失去焦点时收起。
 
 实际 URL 使用 hash，例如 `http://localhost:5173/#/users`。
 
-`pages/` 保持每个路由一个入口文件。`App.vue` 只组装布局、路由出口和全局通知；页面独有状态通过各自 composable 创建，离开页面后销毁。全局 provide/inject 只共享导航、通知和详情弹窗，不共享页面业务表单。
+同类专题路由复用 `TopicPage.vue`，栏目定义与正文分别位于 `data/homeSections.js` 和 `data/topicContent.js`。`App.vue` 只组装布局、路由出口和全局通知；页面独有状态通过各自 composable 创建，离开页面后销毁。全局 provide/inject 只共享导航、通知和详情弹窗，不共享页面业务表单。
 
 ## 其他文件对应什么
 
@@ -49,9 +51,9 @@ Vue 3 + Vite + Vue Router。运行 `npm install`、`npm run dev`，构建 `npm r
 | `src/main.js` | 所有页面的 Vue 启动入口，注册路由并加载样式 |
 | `src/App.vue` | 组装 PortalLayout、RouterView、详情弹窗和全局通知 |
 | `src/router/index.js` | 全部页面的 URL、入口文件及访问权限 |
-| `src/components/home/HomeHero.vue` | 首页独立全屏展示、课程/创作入口及向下浏览提示 |
+| `src/components/home/HomeHero.vue` | 首页主轮播和资讯轮播、播放暂停及图片切换 |
 | `src/components/AboutContent.vue` | 关于我们、联系我们的共用内容 |
-| `src/components/InfoPage.vue` | 教师成长中心、师资介绍、课程介绍、加入我们的共用介绍内容 |
+| `src/components/InfoPage.vue` | 师资介绍、课程介绍、培训等页面的共用介绍内容 |
 | `src/layouts/PortalLayout.vue` | 门户导航、页脚及网络状态提示；政府账号隐藏门户导航和页脚 |
 | `src/components/dialogs/ContentDetailsDialog.vue` | 首页、课程、新闻和作品共用的详情弹窗 |
 | `src/config/portal.js` | 静态导航、图标、新闻分类和介绍页面文案 |
@@ -73,7 +75,7 @@ Vue 3 + Vite + Vue Router。运行 `npm install`、`npm run dev`，构建 `npm r
 | `src/services/password.js` | 与后端一致的 BCrypt 密码 UTF-8 字节校验 |
 | `src/style.css` | 门户、课程、新闻、任务、创作、作品等页面的公共样式 |
 | `src/styles/account.css` | 登录注册、用户管理、账户设置、政府统计页面的补充样式 |
-| `DSC_4070.jpg` | 样式文件引用的首页和登录视觉背景图片 |
+| `img/` | 全部图片与来源说明；保留原始照片，主轮播和登录背景使用同目录的 WebP |
 | `scripts/browser-smoke.mjs` | 可选浏览器联调脚本，不是页面；验证登录、分级账号、政府入口等功能 |
 | `vite.config.js` | 前端开发与打包配置，包含 `/api` 后端代理 |
 | `package.json` | 依赖及启动、构建、格式化命令 |
@@ -102,3 +104,13 @@ Vue 3 + Vite + Vue Router。运行 `npm install`、`npm run dev`，构建 `npm r
 ```powershell
 node scripts/browser-smoke.mjs
 ```
+
+## 网站公开信息与素材维护
+
+复制 `.env.example` 为 `.env.local`，仅填写已经核实、允许公开的运营单位、邮箱、电话、地址和备案信息。所有 `VITE_` 变量会进入前端构建，**不得填写密钥、私人电话或其他非公开资料**。未填写的字段不会在页脚显示；联系页明确说明公开联系方式尚未发布。修改后重新构建。
+
+网站信息由 `src/config/site.js` 集中读取；页脚提供隐私说明和网站使用说明入口。当前说明依据已实现功能撰写，正式对外服务前仍需结合真实运营主体、部署环境和数据处理方式核实。不得仅删除“待配置”文字就视为已经具备上线条件。
+
+首页 16 个细分专题的栏目介绍、使用指引和资源入口统一维护在 `src/data/topicContent.js`。公开课视频、活动排期、合作单位、价格和证书资质需提供已核实资料后发布；现有指引不表示相关服务已经开放。
+
+全部图片放在 `img/`。`DSC_4070.jpg` 位于该目录，公共样式引用其 WebP 版本。重新生成压缩图可在项目根目录执行 `python scripts/optimize-portal-images.py`（需要 Pillow），会保留 JPG 原图，生成宽度不超过 1920 像素的 WebP。素材来源记录在 `img/SOURCES.md`。

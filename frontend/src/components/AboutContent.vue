@@ -1,7 +1,8 @@
 <script setup>
-import { ArrowRight, ArrowUpRight, Compass, Mail, MapPin } from 'lucide-vue-next'
+import { ArrowRight, Compass, Mail, MapPin, Phone, Building2 } from 'lucide-vue-next'
 
 import { useUi } from '../composables/useUi'
+import { site, hasPublicContact } from '../config/site'
 const { page, go } = useUi()
 </script>
 
@@ -29,13 +30,21 @@ const { page, go } = useUi()
       </div>
       <div class="about-contact">
         <h3>联系我们</h3>
-        <p>联系方式和咨询入口请在正式上线前配置。</p>
-        <span> <Mail :size="17" /> 邮箱：待配置 </span
-        ><span> <MapPin :size="17" /> 地址：待配置 </span
-        ><button @click="go('/assistant')">
-          咨询学习助手
-          <ArrowUpRight :size="16" />
-        </button>
+        <span v-if="site.operator"><Building2 :size="17" />运营单位：{{ site.operator }}</span>
+        <template v-if="hasPublicContact">
+          <span v-if="site.phone"
+            ><Phone :size="17" /><a :href="`tel:${site.phone.replace(/[^+0-9-]/g, '')}`">{{
+              site.phone
+            }}</a></span
+          >
+          <span v-if="site.email"
+            ><Mail :size="17" /><a :href="`mailto:${site.email}`">{{ site.email }}</a></span
+          >
+          <span v-if="site.address"><MapPin :size="17" />{{ site.address }}</span>
+        </template>
+        <p v-else>公开联系方式尚未发布。确认后的咨询渠道将在本页统一公布。</p>
+        <p>课程与活动安排请关注平台发布的具体说明。</p>
+        <button @click="go('/news')">查看平台资讯<ArrowRight :size="16" /></button>
       </div>
     </div>
   </section>

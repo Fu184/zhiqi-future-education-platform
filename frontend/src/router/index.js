@@ -93,6 +93,16 @@ const routes = [
   { path: '/join', name: '加入我们', component: () => import('../pages/JoinPage.vue') },
   { path: '/about', name: '关于我们', component: () => import('../pages/AboutPage.vue') },
   { path: '/contact', name: '联系我们', component: () => import('../pages/ContactPage.vue') },
+  {
+    path: '/privacy',
+    name: '隐私说明',
+    component: () => import('../pages/SiteInformationPage.vue'),
+  },
+  {
+    path: '/site-notice',
+    name: '网站使用说明',
+    component: () => import('../pages/SiteInformationPage.vue'),
+  },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 

@@ -1,12 +1,15 @@
 <script setup>
 import { ref, watch } from 'vue'
-import { ChevronDown, Search, Sparkles, UserRound } from 'lucide-vue-next'
+import { RouterLink } from 'vue-router'
+import { site } from '../config/site'
+import { ChevronDown, Search, UserRound } from 'lucide-vue-next'
 import { authStore as store } from '../stores/auth'
 import { nav } from '../config/portal'
 import { useUi } from '../composables/useUi'
 import { landingPage, logout } from '../services/auth'
 const { route, page, go, notify, isNavActive } = useUi()
 const openMenu = ref(null)
+const copyrightYear = new Date().getFullYear()
 watch(
   () => route.fullPath,
   () => {
@@ -46,7 +49,7 @@ async function signOut() {
           <span class="brand-mark"><span></span><span></span><span></span><span></span></span>
           <span class="brand-copy"><strong>智启未来</strong><small>科技教育云平台</small></span>
         </button>
-        <p class="header-motto">共享优质资源 · 点亮科技梦想</p>
+        <p class="header-motto">让每一个奇思妙想都有发生的可能</p>
         <div class="header-actions">
           <button class="icon-button header-search" title="搜索课程" @click="navigate('/courses')">
             <Search :size="19" />
@@ -145,22 +148,71 @@ async function signOut() {
           <div>
             <strong>更多服务</strong><button @click="navigate('/organization')">学校与机构</button
             ><button @click="navigate('/shop')">商品与课程</button
-            ><button @click="navigate('/admin')">管理后台</button>
+            ><button v-if="store.user?.role === 'admin'" @click="navigate('/admin')">
+              管理后台
+            </button>
           </div>
         </div>
       </div>
+      <div
+        class="container footer-information"
+        v-if="site.operator || site.phone || site.email || site.address"
+      >
+        <span v-if="site.operator">运营单位：{{ site.operator }}</span>
+        <a v-if="site.phone" :href="`tel:${site.phone.replace(/[^+0-9-]/g, '')}`"
+          >联系电话：{{ site.phone }}</a
+        >
+        <a v-if="site.email" :href="`mailto:${site.email}`">联系邮箱：{{ site.email }}</a>
+        <span v-if="site.address">地址：{{ site.address }}</span>
+      </div>
       <div class="container footer-bottom">
-        <span>© 2026 智启未来科技教育平台. 前端演示版</span
-        ><span
-          >让想象力成为创造力
-          <Sparkles :size="15" />
-        </span>
+        <span>© {{ copyrightYear }} {{ site.name }}</span>
+        <nav class="footer-notices" aria-label="网站说明">
+          <RouterLink to="/privacy">隐私说明</RouterLink>
+          <RouterLink to="/site-notice">网站使用说明</RouterLink>
+          <a
+            v-if="site.icp"
+            href="https://beian.miit.gov.cn/"
+            target="_blank"
+            rel="noopener noreferrer"
+            >{{ site.icp }}</a
+          >
+          <a
+            v-if="site.policeRecord"
+            href="https://www.beian.gov.cn/"
+            target="_blank"
+            rel="noopener noreferrer"
+            >{{ site.policeRecord }}</a
+          >
+        </nav>
       </div>
     </footer>
   </div>
 </template>
 
 <style scoped>
+.footer-information {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  padding-bottom: 22px;
+  color: #6d7c8d;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.footer-notices {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+}
+.footer-notices a:hover,
+.footer-information a:hover {
+  color: #214f7d;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .footer-brand {
   color: #243c5c;
 }

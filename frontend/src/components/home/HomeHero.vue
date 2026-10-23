@@ -2,9 +2,9 @@
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
-import blossom from '../../../img/DSC_2630.jpg'
-import spring from '../../../img/DSC_2744.jpg'
-import bookshop from '../../../img/DSC_0830.JPG'
+import blossom from '../../../img/DSC_2630.webp'
+import spring from '../../../img/DSC_2744.webp'
+import bookshop from '../../../img/DSC_0830.webp'
 const props = defineProps({
   slides: { type: Array, default: undefined },
   variant: { type: String, default: 'banner' },
