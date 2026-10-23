@@ -13,6 +13,7 @@ import {
   Sparkles,
   Users,
 } from 'lucide-vue-next'
+import { homeSections } from '../data/homeSections'
 
 export const iconMap = {
   BrainCircuit,
@@ -93,7 +94,22 @@ export const newsTabs = [
   '公告',
 ]
 export const navGroups = {
-  '/courses': ['/courses', '/tasks', '/assignments'],
+  '/courses': [
+    '/courses',
+    '/tasks',
+    '/assignments',
+    ...homeSections[0].items.map((item) => item.path),
+    homeSections[0].path,
+  ],
+  '/teacher-growth': [
+    '/teacher-growth',
+    ...homeSections.find((section) => section.id === 'teachers').items.map((item) => item.path),
+  ],
+  '/shop': [
+    '/shop',
+    '/products',
+    ...homeSections.find((section) => section.id === 'products').items.map((item) => item.path),
+  ],
   '/create': ['/create', '/my-works'],
   '/competitions': [
     '/competitions',
@@ -102,6 +118,7 @@ export const navGroups = {
   '/study-tours': [
     '/study-tours',
     ...nav.find((item) => item.path === '/study-tours').children.map((item) => item.path),
+    ...homeSections.find((section) => section.id === 'study-tours').items.map((item) => item.path),
   ],
   '/about': ['/about', '/faculty', '/course-intro'],
 }

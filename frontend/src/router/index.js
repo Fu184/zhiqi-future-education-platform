@@ -2,11 +2,23 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import { authStore as store } from '../stores/auth'
 import { restoreSession, managementRoles } from '../services/auth'
 import { infoPages } from '../config/portal'
+import { homeSections, homeTopicPaths } from '../data/homeSections'
 
 // URL、页面名、源码一一对应；权限由路由入口和后端共同校验。
 const routes = [
+  ...homeSections.flatMap((section) => [
+    { path: section.path, name: section.title, component: () => import('../pages/TopicPage.vue') },
+    ...section.items.map((item) => ({
+      path: item.path,
+      name: `${section.title}-${item.title}`,
+      component: () => import('../pages/TopicPage.vue'),
+    })),
+  ]),
   ...Object.keys(infoPages)
-    .filter((path) => /^\/(competitions|study-tours|training)(\/|$)/.test(path))
+    .filter(
+      (path) =>
+        /^\/(competitions|study-tours|training)(\/|$)/.test(path) && !homeTopicPaths.includes(path),
+    )
     .map((path) => ({
       path,
       name: infoPages[path].title,
@@ -72,11 +84,6 @@ const routes = [
     meta: { authenticated: true },
   },
   { path: '/login', name: '登录注册', component: () => import('../pages/LoginPage.vue') },
-  {
-    path: '/teacher-growth',
-    name: '教师成长中心',
-    component: () => import('../pages/TeacherGrowthPage.vue'),
-  },
   { path: '/faculty', name: '师资介绍', component: () => import('../pages/FacultyPage.vue') },
   {
     path: '/course-intro',

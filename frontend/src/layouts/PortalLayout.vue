@@ -189,42 +189,43 @@ async function signOut() {
 .login-action {
   color: #2367b5;
   border-color: #dce7f4;
-  border-radius: 5px;
+  border-radius: 2px;
 }
 .login-action:hover {
   background: #edf5ff;
 }
 .portal-navigation {
-  background: #edf5ff;
-  border-top: 1px solid #e4edf8;
-  border-bottom: 1px solid #dce8f5;
+  background: #214f7d;
+  color: #fff;
+  border-top: 1px solid #214f7d;
+  border-bottom: 1px solid #173c61;
 }
 .portal-nav-list {
-  width: calc(100% - 32px);
+  width: min(1232px, calc(100% - 32px));
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 2px;
-  padding-block: 10px;
+  padding-block: 3px;
 }
 .portal-nav-link {
   border: 0;
   background: transparent;
-  color: #243c5c;
+  color: #fff;
   font-size: clamp(13px, 0.98vw, 15px);
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.5;
   white-space: nowrap;
   padding: 10px 8px;
-  border-radius: 4px;
+  border-radius: 0;
   transition:
     color 0.2s,
     background 0.2s;
 }
 .portal-nav-heading.active,
 .portal-nav-heading:hover {
-  color: #176cc3;
-  background: #dfeeff;
+  color: #fff;
+  background: #173d64;
 }
 .portal-nav-item {
   position: relative;
@@ -234,7 +235,7 @@ async function signOut() {
   display: flex;
   justify-content: center;
   align-items: center;
-  border-radius: 4px;
+  border-radius: 0;
 }
 .portal-nav-heading.active .portal-nav-link,
 .portal-nav-heading:hover .portal-nav-link {
@@ -260,7 +261,7 @@ async function signOut() {
   min-width: max(100%, 150px);
   padding: 8px;
   border: 1px solid #dce8f5;
-  border-radius: 6px;
+  border-radius: 0;
   background: #fff;
   box-shadow: 0 10px 24px #243c5c1a;
 }
@@ -269,7 +270,7 @@ async function signOut() {
   width: 100%;
   padding: 10px 12px;
   border: 0;
-  border-radius: 4px;
+  border-radius: 0;
   background: transparent;
   color: #243c5c;
   text-align: left;

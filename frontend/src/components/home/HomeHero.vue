@@ -1,18 +1,30 @@
 <script setup>
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-vue-next'
+import { RouterLink } from 'vue-router'
 import blossom from '../../../img/DSC_2630.jpg'
 import spring from '../../../img/DSC_2744.jpg'
 import bookshop from '../../../img/DSC_0830.JPG'
-const slides = [
+const props = defineProps({
+  slides: { type: Array, default: undefined },
+  variant: { type: String, default: 'banner' },
+})
+const defaultSlides = [
   { src: blossom, alt: '枝头盛开的粉色花朵', label: '自然之美', position: '50% 48%' },
   { src: spring, alt: '明亮天空下的春日花枝', label: '春日发现', position: '50% 50%' },
   { src: bookshop, alt: '夜色中亮起灯光的书店招牌', label: '阅读时光', position: '50% 52%' },
 ]
+const slides = computed(() => (props.slides?.length ? props.slides : defaultSlides))
 const current = ref(0),
   paused = ref(false),
   hovered = ref(false),
   focused = ref(false)
+watch(
+  () => slides.value.length,
+  () => {
+    current.value = 0
+  },
+)
 const reducedMotion = ref(false),
   hidden = ref(false)
 const autoplay = computed(
@@ -20,7 +32,7 @@ const autoplay = computed(
 )
 let timer, media
 function select(index) {
-  current.value = (index + slides.length) % slides.length
+  current.value = (index + slides.value.length) % slides.value.length
 }
 function changeMotion() {
   reducedMotion.value = media.matches
@@ -47,8 +59,8 @@ onUnmounted(() => {
 
 <template>
   <section
-    class="home-carousel"
-    aria-label="首页图片轮播"
+    :class="['home-carousel', { 'news-carousel': variant === 'news' }]"
+    :aria-label="variant === 'news' ? '资讯图片轮播' : '首页图片轮播'"
     aria-roledescription="轮播图"
     @mouseenter="hovered = true"
     @mouseleave="hovered = false"
@@ -57,7 +69,7 @@ onUnmounted(() => {
     @keydown.left.prevent="select(current - 1)"
     @keydown.right.prevent="select(current + 1)"
   >
-    <h1 class="visually-hidden">智启未来科技教育云平台</h1>
+    <h1 v-if="variant === 'banner'" class="visually-hidden">智启未来科技教育云平台</h1>
     <div class="carousel-stage">
       <div
         v-for="(slide, index) in slides"
@@ -74,6 +86,14 @@ onUnmounted(() => {
           :style="{ objectPosition: slide.position }"
           :fetchpriority="index === 0 ? 'high' : 'auto'"
         />
+        <RouterLink
+          v-if="slide.to"
+          :to="slide.to"
+          class="slide-news-link"
+          :tabindex="current === index ? 0 : -1"
+        >
+          <span>{{ slide.label }}</span>
+        </RouterLink>
       </div>
       <button class="carousel-arrow previous" aria-label="上一张图片" @click="select(current - 1)">
         <ChevronLeft :size="27" />
@@ -82,7 +102,7 @@ onUnmounted(() => {
         <ChevronRight :size="27" />
       </button>
     </div>
-    <div class="carousel-toolbar container">
+    <div class="carousel-toolbar">
       <div class="carousel-pagination">
         <button
           v-for="(slide, index) in slides"
@@ -104,7 +124,7 @@ onUnmounted(() => {
         </button>
       </div>
       <span class="carousel-caption" aria-live="off"
-        >{{ slides[current].label
+        >{{ variant === 'news' ? '资讯速览' : slides[current].label
         }}<span class="carousel-count">0{{ current + 1 }} / 0{{ slides.length }}</span></span
       >
     </div>
@@ -114,6 +134,7 @@ onUnmounted(() => {
 <style scoped>
 .home-carousel {
   background: #fff;
+  min-width: 0;
 }
 .visually-hidden {
   position: absolute;
@@ -133,10 +154,12 @@ onUnmounted(() => {
   position: absolute;
   inset: 0;
   opacity: 0;
+  pointer-events: none;
   transition: opacity 0.65s ease;
 }
 .carousel-slide.is-active {
   opacity: 1;
+  pointer-events: auto;
 }
 .carousel-slide img {
   width: 100%;
@@ -153,7 +176,7 @@ onUnmounted(() => {
   width: 42px;
   height: 64px;
   border: 0;
-  border-radius: 5px;
+  border-radius: 0;
   color: #fff;
   background: #15283e55;
   transition: background 0.2s;
@@ -173,6 +196,41 @@ onUnmounted(() => {
   align-items: center;
   min-height: 52px;
   gap: 16px;
+  padding-inline: 18px;
+}
+.news-carousel .carousel-stage {
+  height: 232px;
+  border-radius: 0;
+}
+.news-carousel .carousel-toolbar {
+  min-height: 40px;
+  padding-inline: 0;
+}
+.news-carousel .carousel-arrow {
+  width: 30px;
+  height: 40px;
+}
+.news-carousel .previous {
+  left: 12px;
+}
+.news-carousel .next {
+  right: 12px;
+}
+.slide-news-link {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: 45px 18px 16px;
+  background: linear-gradient(transparent 45%, #16263cd9);
+  color: #fff;
+}
+.slide-news-link span {
+  font-size: 14px;
+  line-height: 1.8;
+}
+.slide-news-link:focus-visible {
+  outline-offset: -4px;
 }
 .carousel-pagination {
   display: flex;
@@ -190,14 +248,14 @@ onUnmounted(() => {
   width: 7px;
   height: 7px;
   background: #d3dbe4;
-  border-radius: 8px;
+  border-radius: 0;
   transition:
     width 0.2s,
     background 0.2s;
 }
 .carousel-dot.active span {
   width: 30px;
-  background: #2871c1;
+  background: #214f7d;
 }
 .carousel-pause {
   display: grid;

@@ -1,9 +1,21 @@
 <script setup>
+import { watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { ArrowUpRight, Newspaper, Search } from 'lucide-vue-next'
 
 import { useNews } from '../composables/useNews'
 import { useUi } from '../composables/useUi'
+import { demoStore as store } from '../stores/demo'
 const { dialog } = useUi()
+const route = useRoute()
+watch(
+  () => route.query.article,
+  (id) => {
+    const item = store.news.find((item) => String(item.id) === String(id))
+    if (item) dialog.value = { kind: 'news', item }
+  },
+  { immediate: true, flush: 'post' },
+)
 const { keyword, newsCategory, filteredNews, newsTabs } = useNews()
 </script>
 
